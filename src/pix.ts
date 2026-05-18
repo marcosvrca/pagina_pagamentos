@@ -1,4 +1,5 @@
 import QRCode from "qrcode";
+import { BRAND } from "./brand";
 import type { Mensalidade, PixConfig } from "./types";
 
 function sanitizePixText(value: string, maxLength: number): string {
@@ -79,7 +80,7 @@ export async function gerarPix(
   const qrDataUrl = await QRCode.toDataURL(payload, {
     width: 280,
     margin: 2,
-    color: { dark: "#0f172a", light: "#ffffff" },
+    color: { dark: BRAND.surfaceElevated, light: "#ffffff" },
   });
 
   return { payload, qrDataUrl };

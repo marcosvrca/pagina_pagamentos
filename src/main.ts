@@ -1,9 +1,18 @@
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./style.css";
+import {
+  FOOTER_LEGAL,
+  refreshLogoAssets,
+  renderLogoHtml,
+  resolveLogoSrc,
+} from "./brand";
 import {
   diasAteVencimento,
   formatarData,
   formatarMoeda,
 } from "./format";
+import { baixarBoletoPdf, carregarLogoComoDataUrl } from "./boleto";
 import { gerarPix } from "./pix";
 import type {
   CobrancasData,
@@ -17,6 +26,8 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 let cobrancasData: CobrancasData | null = null;
 let pixConfig: PixConfig | null = null;
+let logoSrc: string | null = null;
+let logoHeroSrc: string | null = null;
 
 async function carregarDados(): Promise<void> {
   const [cobrancasRes, configRes] = await Promise.all([
@@ -35,15 +46,15 @@ async function carregarDados(): Promise<void> {
 function badgeVencimento(iso: string): { label: string; className: string } {
   const dias = diasAteVencimento(iso);
   if (dias < 0) {
-    return { label: "Vencida", className: "badge-late" };
+    return { label: "Vencida", className: "text-bg-danger" };
   }
   if (dias === 0) {
-    return { label: "Vence hoje", className: "badge-warn" };
+    return { label: "Vence hoje", className: "text-bg-warning" };
   }
   if (dias <= 5) {
-    return { label: `${dias} dia(s)`, className: "badge-warn" };
+    return { label: `${dias} dia(s)`, className: "text-bg-warning" };
   }
-  return { label: "Em dia", className: "badge-ok" };
+  return { label: "Em dia", className: "text-bg-success" };
 }
 
 function buscarContrato(numero: string): Contrato | undefined {
@@ -57,16 +68,27 @@ function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
+function renderHeader(
+  logoClass = "brand-logo",
+  src: string | null = logoHeroSrc ?? logoSrc
+): string {
+  return `
+    <header class="app-header app-header--login text-center">
+      ${renderLogoHtml(src, { className: logoClass })}
+    </header>
+  `;
+}
+
 function renderItemProxima(m: Mensalidade): string {
   return `
-    <li class="schedule-item schedule-item--future">
-      <div class="schedule-item-main">
-        <span class="schedule-ref">${escapeHtml(m.referencia)}</span>
-        <span class="schedule-valor">${formatarMoeda(m.valor)}</span>
+    <li class="list-group-item schedule-item schedule-item--future">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <span class="fw-semibold">${escapeHtml(m.referencia)}</span>
+        <span class="text-nowrap fw-bold">${formatarMoeda(m.valor)}</span>
       </div>
-      <div class="schedule-item-sub">
+      <div class="d-flex justify-content-between align-items-center mt-1 small text-muted">
         <span>Vence em ${formatarData(m.vencimento)}</span>
-        <span class="badge badge-muted">Previsto</span>
+        <span class="badge text-bg-secondary">Previsto</span>
       </div>
     </li>
   `;
@@ -74,14 +96,14 @@ function renderItemProxima(m: Mensalidade): string {
 
 function renderItemHistorico(m: MensalidadePaga): string {
   return `
-    <li class="schedule-item schedule-item--paid">
-      <div class="schedule-item-main">
-        <span class="schedule-ref">${escapeHtml(m.referencia)}</span>
-        <span class="schedule-valor">${formatarMoeda(m.valor)}</span>
+    <li class="list-group-item schedule-item schedule-item--paid">
+      <div class="d-flex justify-content-between align-items-start gap-2">
+        <span class="fw-semibold">${escapeHtml(m.referencia)}</span>
+        <span class="text-nowrap fw-bold">${formatarMoeda(m.valor)}</span>
       </div>
-      <div class="schedule-item-sub">
+      <div class="d-flex justify-content-between align-items-center mt-1 small text-muted">
         <span>Pago em ${formatarData(m.pagoEm)}</span>
-        <span class="badge badge-ok">Pago</span>
+        <span class="badge text-bg-success">Pago</span>
       </div>
     </li>
   `;
@@ -89,31 +111,40 @@ function renderItemHistorico(m: MensalidadePaga): string {
 
 function renderLogin(): void {
   app.innerHTML = `
-    <div class="shell">
-      <div class="card">
-        <div class="brand">
-          <div class="brand-icon">$</div>
-          <div>
-            <h1>Pagamento</h1>
-            <p>Informe o número do seu contrato</p>
+    <div class="page-login min-vh-100 d-flex flex-column">
+      <main class="container page-login-main flex-grow-1 d-flex align-items-start justify-content-center">
+        <div class="w-100" style="max-width: 520px;">
+          ${renderHeader("brand-logo brand-logo--hero")}
+          <div class="card shadow-lg border-0 app-card">
+            <div class="card-body p-4 p-md-5">
+              <h1 class="h4 text-center mb-1">Portal de cobrança</h1>
+              <p class="text-center text-muted small mb-4">Informe o número do seu contrato para consultar e pagar.</p>
+              <form id="form-contrato" novalidate>
+                <div class="mb-3">
+                  <label for="contrato" class="form-label fw-semibold">Número do contrato</label>
+                  <input
+                    id="contrato"
+                    name="contrato"
+                    type="text"
+                    class="form-control form-control-lg font-monospace"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    required
+                  />
+                  <div class="form-text">O número consta no seu e-mail ou mensagem de boas-vindas.</div>
+                </div>
+                <div id="erro" class="alert alert-danger d-none mb-3" role="alert"></div>
+                <button type="submit" class="btn btn-primary btn-lg w-100" id="btn-buscar">
+                  Consultar cobrança
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-        <form id="form-contrato">
-          <label for="contrato">Número do contrato</label>
-          <input
-            id="contrato"
-            name="contrato"
-            type="text"
-            inputmode="numeric"
-            autocomplete="off"
-            placeholder="Ex.: 7842"
-            required
-          />
-          <p class="hint">O número consta no seu e-mail ou mensagem de boas-vindas.</p>
-          <div id="erro" class="error hidden" role="alert"></div>
-          <button type="submit" class="btn" id="btn-buscar">Consultar cobrança</button>
-        </form>
-      </div>
+      </main>
+      <footer class="app-footer text-center py-3 small text-muted">
+        © ${new Date().getFullYear()} - ${escapeHtml(FOOTER_LEGAL)}
+      </footer>
     </div>
   `;
 
@@ -123,34 +154,58 @@ function renderLogin(): void {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    erro.classList.add("hidden");
+    erro.classList.add("d-none");
 
     const contrato = buscarContrato(input.value);
     if (!contrato) {
       erro.textContent =
         "Contrato não encontrado. Verifique o número e tente novamente.";
-      erro.classList.remove("hidden");
+      erro.classList.remove("d-none");
+      input.classList.add("is-invalid");
+      input.focus();
       return;
     }
+
+    input.classList.remove("is-invalid");
 
     if (!pixConfig) return;
 
     const btn = document.querySelector<HTMLButtonElement>("#btn-buscar")!;
     btn.disabled = true;
-    btn.textContent = "Gerando PIX…";
+    btn.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Gerando PIX…';
 
     try {
       const pix = await gerarPix(contrato.numero, contrato.atual, pixConfig);
       renderCobranca(contrato, pix.payload, pix.qrDataUrl);
     } catch {
       erro.textContent = "Erro ao gerar o PIX. Tente novamente em instantes.";
-      erro.classList.remove("hidden");
+      erro.classList.remove("d-none");
       btn.disabled = false;
       btn.textContent = "Consultar cobrança";
     }
   });
 
+  input.addEventListener("input", () => input.classList.remove("is-invalid"));
   input.focus();
+}
+
+const WHATSAPP_COMPROVANTE = "5563991120229";
+
+function linkComprovanteWhatsApp(
+  contrato: Contrato,
+  mensalidade: Contrato["atual"]
+): string {
+  const mensagem = [
+    "Olá! Segue o comprovante do pagamento da mensalidade.",
+    "",
+    `Contrato: ${contrato.numero}`,
+    `Cliente: ${contrato.nome}`,
+    `Referência: ${mensalidade.referencia}`,
+    `Valor: ${formatarMoeda(mensalidade.valor)}`,
+  ].join("\n");
+
+  return `https://wa.me/${WHATSAPP_COMPROVANTE}?text=${encodeURIComponent(mensagem)}`;
 }
 
 function renderCobranca(
@@ -161,88 +216,125 @@ function renderCobranca(
   const { atual, proximas, historico } = contrato;
   const badge = badgeVencimento(atual.vencimento);
   const chaveExibicao = pixConfig?.chave.replace("+55", "") ?? "";
+  const linkWhatsApp = linkComprovanteWhatsApp(contrato, atual);
 
-  const proximasHtml =
+  const proximasBlock =
     proximas.length > 0
-      ? proximas.map(renderItemProxima).join("")
-      : `<p class="panel-empty">Nenhum vencimento previsto cadastrado.</p>`;
+      ? `<ul class="list-group list-group-flush schedule-list">${proximas.map(renderItemProxima).join("")}</ul>`
+      : `<p class="text-muted small mb-0 fst-italic">Nenhum vencimento previsto cadastrado.</p>`;
 
   const historicoCount = historico.length;
   const historicoListaHtml =
     historicoCount > 0
-      ? `<ul class="schedule-list">${historico
+      ? `<ul class="list-group list-group-flush schedule-list">${historico
           .slice()
           .reverse()
           .map(renderItemHistorico)
           .join("")}</ul>`
-      : `<p class="panel-empty">Nenhuma mensalidade paga registrada ainda.</p>`;
+      : `<p class="text-muted small mb-0 fst-italic">Nenhuma mensalidade paga registrada ainda.</p>`;
 
   app.innerHTML = `
-    <div class="shell shell-wide">
-      <div class="card">
-        <div class="invoice-header">
-          <h2>${escapeHtml(contrato.nome)}</h2>
-          <p class="ref">Contrato ${escapeHtml(contrato.numero)}</p>
-        </div>
-
-        <div class="billing-layout" id="billing-layout">
+    <div class="page-billing min-vh-100 py-3 py-md-4">
+      <div class="container" style="max-width: 900px;">
+        <nav class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+          ${renderLogoHtml(logoSrc, { className: "brand-logo brand-logo--compact" })}
+          <div class="flex-grow-1 min-w-0">
+            <p class="mb-0 fw-semibold text-truncate">${escapeHtml(contrato.nome)}</p>
+            <p class="text-muted small mb-0">Contrato ${escapeHtml(contrato.numero)}</p>
+          </div>
           <button
             type="button"
-            class="historico-toggle"
-            id="btn-historico"
-            aria-expanded="false"
-            aria-controls="historico-panel"
+            class="btn btn-outline-secondary btn-sm flex-shrink-0"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#historico-offcanvas"
+            aria-controls="historico-offcanvas"
           >
-            <span class="historico-toggle-text">Histórico de pagamentos</span>
-            ${
-              historicoCount > 0
-                ? `<span class="historico-toggle-count">${historicoCount}</span>`
-                : ""
-            }
-            <span class="historico-toggle-chevron" aria-hidden="true">›</span>
+            Histórico
+            ${historicoCount > 0 ? `<span class="badge text-bg-primary ms-1">${historicoCount}</span>` : ""}
           </button>
+        </nav>
 
-          <div class="billing-body">
-            <aside class="historico-panel" id="historico-panel" hidden>
-              ${historicoListaHtml}
-            </aside>
-
-            <div class="billing-main">
-              <div class="billing-columns">
-                <section class="panel panel-atual" aria-labelledby="titulo-atual">
-                  <h3 id="titulo-atual" class="panel-title">Mensalidade atual</h3>
-                  <p class="panel-ref">${escapeHtml(atual.referencia)}</p>
-                  <p class="amount amount-sm">${formatarMoeda(atual.valor)}</p>
-                  <div class="meta meta-compact">
-                    <div class="meta-row">
-                      <span>Vencimento</span>
-                      <span>
-                        ${formatarData(atual.vencimento)}
-                        <span class="badge ${badge.className}">${badge.label}</span>
-                      </span>
-                    </div>
-                  </div>
-                  <div class="qr-wrap">
-                    <img src="${qrDataUrl}" width="240" height="240" alt="QR Code PIX" />
-                    <p>Escaneie para pagar esta mensalidade</p>
-                  </div>
-                  <button type="button" class="btn" id="btn-copiar">Copiar código PIX</button>
-                  <p class="pix-key">Chave PIX (telefone): ${escapeHtml(chaveExibicao)}</p>
-                </section>
-
-                <section class="panel panel-proximas" aria-labelledby="titulo-proximas">
-                  <h3 id="titulo-proximas" class="panel-title">Próximos vencimentos</h3>
-                  <p class="panel-hint">Aviso — o PIX será gerado quando cada mês estiver em aberto.</p>
-                  <ul class="schedule-list">
-                    ${proximasHtml}
-                  </ul>
-                </section>
+        <div class="row g-4 align-items-start">
+          <section class="col-lg-7">
+            <div class="card border-primary-subtle shadow-sm panel-atual">
+              <div class="card-header bg-primary-subtle border-primary-subtle">
+                <span class="text-uppercase small fw-bold text-primary">Mensalidade atual</span>
+              </div>
+              <div class="card-body p-4">
+                <h2 class="h5 mb-1">${escapeHtml(atual.referencia)}</h2>
+                <p class="display-6 fw-bold text-primary mb-3">${formatarMoeda(atual.valor)}</p>
+                <dl class="row small mb-4 g-2">
+                  <dt class="col-5 text-muted">Vencimento</dt>
+                  <dd class="col-7 mb-0">
+                    ${formatarData(atual.vencimento)}
+                    <span class="badge ${badge.className} ms-1">${badge.label}</span>
+                  </dd>
+                </dl>
+                <div class="qr-wrap text-center p-3 mb-3 rounded-3 border border-2 border-dashed">
+                  <img
+                    class="qr-code-img rounded"
+                    src="${qrDataUrl}"
+                    width="240"
+                    height="240"
+                    alt="QR Code PIX para pagamento"
+                  />
+                  <p class="small text-muted mt-2 mb-0">Escaneie com o app do seu banco</p>
+                </div>
+                <button type="button" class="btn btn-primary w-100" id="btn-copiar">
+                  Copiar código PIX
+                </button>
+                <button type="button" class="btn btn-outline-primary w-100 mt-2" id="btn-boleto">
+                  Baixar boleto (PDF)
+                </button>
+                <a
+                  href="${linkWhatsApp}"
+                  class="btn btn-whatsapp w-100 mt-2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Enviar comprovante pelo WhatsApp
+                </a>
+                <p class="small text-muted text-center mt-2 mb-0">
+                  Após pagar, envie o comprovante pelo botão acima.
+                </p>
+                <p class="small text-muted text-center mb-0">
+                  Chave PIX (telefone): <span class="font-monospace">${escapeHtml(chaveExibicao)}</span>
+                </p>
               </div>
             </div>
-          </div>
+          </section>
+
+          <section class="col-lg-5">
+            <div class="card shadow-sm">
+              <div class="card-header card-header--muted">
+                <span class="text-uppercase small fw-bold text-secondary">Próximos vencimentos</span>
+              </div>
+              <div class="card-body">
+                <p class="small text-muted mb-3">O PIX será gerado quando cada mês estiver em aberto.</p>
+                ${proximasBlock}
+              </div>
+            </div>
+          </section>
         </div>
 
-        <button type="button" class="btn btn-secondary" id="btn-voltar">Outro contrato</button>
+        <button type="button" class="btn btn-outline-secondary w-100 mt-4" id="btn-voltar">
+          Consultar outro contrato
+        </button>
+      </div>
+
+      <div
+        class="offcanvas offcanvas-end"
+        tabindex="-1"
+        id="historico-offcanvas"
+        aria-labelledby="historico-offcanvas-label"
+      >
+        <div class="offcanvas-header border-bottom">
+          <h2 class="offcanvas-title h5" id="historico-offcanvas-label">Histórico de pagamentos</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+        </div>
+        <div class="offcanvas-body">
+          ${historicoListaHtml}
+        </div>
       </div>
     </div>
   `;
@@ -253,47 +345,114 @@ function renderCobranca(
       const btn = document.querySelector<HTMLButtonElement>("#btn-copiar")!;
       try {
         await navigator.clipboard.writeText(pixPayload);
-        btn.textContent = "Copiado!";
-        btn.classList.add("copied");
+        btn.textContent = "Código copiado!";
+        btn.classList.remove("btn-primary");
+        btn.classList.add("btn-success");
         setTimeout(() => {
           btn.textContent = "Copiar código PIX";
-          btn.classList.remove("copied");
+          btn.classList.remove("btn-success");
+          btn.classList.add("btn-primary");
         }, 2500);
       } catch {
         btn.textContent = "Não foi possível copiar";
+        btn.classList.add("btn-danger");
+        setTimeout(() => {
+          btn.textContent = "Copiar código PIX";
+          btn.classList.remove("btn-danger");
+          btn.classList.add("btn-primary");
+        }, 2500);
       }
     }
   );
 
-  const billingLayout = document.querySelector<HTMLElement>("#billing-layout")!;
-  const toggleHistorico = document.querySelector<HTMLButtonElement>("#btn-historico")!;
-  const panelHistorico = document.querySelector<HTMLElement>("#historico-panel")!;
+  document.querySelector<HTMLButtonElement>("#btn-boleto")!.addEventListener(
+    "click",
+    async () => {
+      const btn = document.querySelector<HTMLButtonElement>("#btn-boleto")!;
+      if (!pixConfig) return;
 
-  toggleHistorico.addEventListener("click", () => {
-    const expanded = billingLayout.classList.toggle("is-expanded");
-    toggleHistorico.setAttribute("aria-expanded", String(expanded));
-    panelHistorico.hidden = !expanded;
-  });
+      const labelOriginal = "Baixar boleto (PDF)";
+      btn.disabled = true;
+      btn.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Gerando PDF…';
+
+      try {
+        const logoDataUrl = await carregarLogoComoDataUrl(logoSrc);
+        await baixarBoletoPdf({
+          contrato,
+          mensalidade: atual,
+          pixConfig,
+          pixPayload,
+          qrDataUrl,
+          logoDataUrl,
+        });
+        btn.textContent = "Boleto baixado!";
+        btn.classList.add("btn-success");
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = labelOriginal;
+          btn.classList.remove("btn-success");
+        }, 2000);
+      } catch {
+        btn.disabled = false;
+        btn.textContent = "Erro ao gerar PDF";
+        btn.classList.add("btn-danger");
+        setTimeout(() => {
+          btn.textContent = labelOriginal;
+          btn.classList.remove("btn-danger");
+        }, 2500);
+      }
+    }
+  );
 
   document
     .querySelector<HTMLButtonElement>("#btn-voltar")!
     .addEventListener("click", () => renderLogin());
 }
 
+function renderLoading(): void {
+  app.innerHTML = `
+    <div class="min-vh-100 d-flex align-items-center justify-content-center">
+      <div class="text-center">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Carregando…</span>
+        </div>
+        <p class="text-muted mb-0">Carregando portal…</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderErroCarregamento(): void {
+  app.innerHTML = `
+    <div class="min-vh-100 d-flex align-items-center justify-content-center p-3">
+      <div class="card shadow-sm border-0" style="max-width: 400px;">
+        <div class="card-body text-center p-4">
+          ${renderHeader()}
+          <div class="alert alert-danger mb-0" role="alert">
+            Não foi possível carregar os dados. Atualize a página.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 async function init(): Promise<void> {
-  app.innerHTML = `<div class="shell"><div class="card"><p style="text-align:center;color:var(--muted)">Carregando…</p></div></div>`;
+  renderLoading();
+  refreshLogoAssets();
 
   try {
+    [logoSrc, logoHeroSrc] = await Promise.all([
+      resolveLogoSrc(false),
+      resolveLogoSrc(true),
+    ]);
     await carregarDados();
     renderLogin();
   } catch {
-    app.innerHTML = `
-      <div class="shell">
-        <div class="card">
-          <p class="error" style="margin:0">Não foi possível carregar. Atualize a página.</p>
-        </div>
-      </div>
-    `;
+    if (!logoSrc) logoSrc = await resolveLogoSrc(false).catch(() => null);
+    if (!logoHeroSrc) logoHeroSrc = await resolveLogoSrc(true).catch(() => null);
+    renderErroCarregamento();
   }
 }
 
