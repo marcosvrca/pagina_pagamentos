@@ -14,6 +14,7 @@ import {
 } from "./format";
 import { baixarBoletoPdf, carregarLogoComoDataUrl } from "./boleto";
 import { gerarPix } from "./pix";
+import { publicUrl } from "./public-url";
 import type {
   CobrancasData,
   Contrato,
@@ -31,8 +32,8 @@ let logoHeroSrc: string | null = null;
 
 async function carregarDados(): Promise<void> {
   const [cobrancasRes, configRes] = await Promise.all([
-    fetch("/cobrancas.json"),
-    fetch("/config.json"),
+    fetch(publicUrl("cobrancas.json")),
+    fetch(publicUrl("config.json")),
   ]);
 
   if (!cobrancasRes.ok || !configRes.ok) {

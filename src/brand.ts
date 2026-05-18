@@ -1,16 +1,18 @@
+import { publicUrl } from "./public-url";
+
 const LOGO_CANDIDATES = [
-  "/static/img/logo.jpeg",
-  "/static/img/logo.jpg",
-  "/static/img/logo.png",
-  "/static/img/logo.svg",
-  "/static/img/logo.webp",
-  "/static/img/logo",
-];
+  "static/img/logo.jpeg",
+  "static/img/logo.jpg",
+  "static/img/logo.png",
+  "static/img/logo.svg",
+  "static/img/logo.webp",
+  "static/img/logo",
+].map(publicUrl);
 
 const LOGO_HERO_CANDIDATES = [
-  "/static/img/logocompleta.png",
-  "/static/img/logocompleta.jpeg",
-  "/static/img/logocompleta.jpg",
+  "static/img/logocompleta.png",
+  "static/img/logocompleta.jpeg",
+  "static/img/logocompleta.jpg",
   ...LOGO_CANDIDATES,
 ];
 
