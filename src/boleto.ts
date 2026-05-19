@@ -191,6 +191,11 @@ export async function baixarBoletoPdf(params: BoletoParams): Promise<void> {
   );
   y += rowH;
 
+  if (mensalidade.descricao) {
+    desenharCampo(doc, margin, y, contentW, rowH + 4, "Descrição", mensalidade.descricao, 8);
+    y += rowH + 4;
+  }
+
   desenharCampo(
     doc,
     margin,

@@ -8,6 +8,8 @@ export interface Mensalidade {
   referencia: string;
   valor: number;
   vencimento: string;
+  /** Texto exibido ao cliente (ex.: tipo de cobrança) */
+  descricao?: string;
   /** Identificador do mês no PIX (ex.: "2026-05") */
   id?: string;
 }

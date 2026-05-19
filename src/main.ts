@@ -69,6 +69,11 @@ function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
+function renderDescricaoHtml(m: Mensalidade): string {
+  if (!m.descricao) return "";
+  return `<p class="small text-muted mb-0 mt-1">${escapeHtml(m.descricao)}</p>`;
+}
+
 function renderHeader(
   logoClass = "brand-logo",
   src: string | null = logoHeroSrc ?? logoSrc
@@ -84,7 +89,10 @@ function renderItemProxima(m: Mensalidade): string {
   return `
     <li class="list-group-item schedule-item schedule-item--future">
       <div class="d-flex justify-content-between align-items-start gap-2">
-        <span class="fw-semibold">${escapeHtml(m.referencia)}</span>
+        <div class="min-w-0">
+          <span class="fw-semibold">${escapeHtml(m.referencia)}</span>
+          ${renderDescricaoHtml(m)}
+        </div>
         <span class="text-nowrap fw-bold">${formatarMoeda(m.valor)}</span>
       </div>
       <div class="d-flex justify-content-between align-items-center mt-1 small text-muted">
@@ -99,7 +107,10 @@ function renderItemHistorico(m: MensalidadePaga): string {
   return `
     <li class="list-group-item schedule-item schedule-item--paid">
       <div class="d-flex justify-content-between align-items-start gap-2">
-        <span class="fw-semibold">${escapeHtml(m.referencia)}</span>
+        <div class="min-w-0">
+          <span class="fw-semibold">${escapeHtml(m.referencia)}</span>
+          ${renderDescricaoHtml(m)}
+        </div>
         <span class="text-nowrap fw-bold">${formatarMoeda(m.valor)}</span>
       </div>
       <div class="d-flex justify-content-between align-items-center mt-1 small text-muted">
@@ -203,6 +214,7 @@ function linkComprovanteWhatsApp(
     `Contrato: ${contrato.numero}`,
     `Cliente: ${contrato.nome}`,
     `Referência: ${mensalidade.referencia}`,
+    ...(mensalidade.descricao ? [`Descrição: ${mensalidade.descricao}`] : []),
     `Valor: ${formatarMoeda(mensalidade.valor)}`,
   ].join("\n");
 
@@ -263,6 +275,7 @@ function renderCobranca(
               </div>
               <div class="card-body p-4">
                 <h2 class="h5 mb-1">${escapeHtml(atual.referencia)}</h2>
+                ${renderDescricaoHtml(atual)}
                 <p class="display-6 fw-bold text-primary mb-3">${formatarMoeda(atual.valor)}</p>
                 <dl class="row small mb-4 g-2">
                   <dt class="col-5 text-muted">Vencimento</dt>
