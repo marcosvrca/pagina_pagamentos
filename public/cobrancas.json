@@ -68,15 +68,15 @@
       "nome": "HL Sports",
       "atual": {
         "id": "2026-06",
-        "referencia": "Mensalidade — Junho/2026",
-        "valor": 150,
+        "referencia": "Fatura — Junho/2026",
+        "valor": 500,
         "vencimento": "2026-06-04"
       },
       "proximas": [
         {
           "id": "2026-07",
-          "referencia": "Mensalidade — Julho/2026",
-          "valor": 150,
+          "referencia": "Fatura — Julho/2026",
+          "valor": 500,
           "vencimento": "2026-07-04"
         },
         {
