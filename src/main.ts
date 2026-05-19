@@ -30,10 +30,15 @@ let pixConfig: PixConfig | null = null;
 let logoSrc: string | null = null;
 let logoHeroSrc: string | null = null;
 
+const fetchSemCache = (url: string) =>
+  fetch(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`, {
+    cache: "no-store",
+  });
+
 async function carregarDados(): Promise<void> {
   const [cobrancasRes, configRes] = await Promise.all([
-    fetch(publicUrl("cobrancas.json")),
-    fetch(publicUrl("config.json")),
+    fetchSemCache(publicUrl("cobrancas.json")),
+    fetchSemCache(publicUrl("config.json")),
   ]);
 
   if (!cobrancasRes.ok || !configRes.ok) {
