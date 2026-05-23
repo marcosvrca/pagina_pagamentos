@@ -4,18 +4,12 @@
       "numero": "236768",
       "nome": "Daniel Santos",
       "atual": {
-        "id": "2026-05",
-        "referencia": "Mensalidade — Maio/2026",
+        "id": "2026-06",
+        "referencia": "Mensalidade — Junho/2026",
         "valor": 49.9,
-        "vencimento": "2026-05-20"
+        "vencimento": "2026-06-20"
       },
       "proximas": [
-        {
-          "id": "2026-06",
-          "referencia": "Mensalidade — Junho/2026",
-          "valor": 49.9,
-          "vencimento": "2026-06-20"
-        },
         {
           "id": "2026-07",
           "referencia": "Mensalidade — Julho/2026",
@@ -60,6 +54,13 @@
           "valor": 49.9,
           "vencimento": "2026-04-20",
           "pagoEm": "2026-04-25"
+        },
+        {
+          "id": "2026-05",
+          "referencia": "Mensalidade — Maio/2026",
+          "valor": 49.9,
+          "vencimento": "2026-05-20",
+          "pagoEm": "2026-05-20"
         }
       ]
     },
@@ -185,6 +186,83 @@
           "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
           "valor": 150,
           "vencimento": "2026-12-04"
+        }
+      ],
+      "historico": []
+    },
+    {
+      "numero": "882997",
+      "nome": "Ana Paula",
+      "atual": {
+        "id": "2026-05-fatura",
+        "referencia": "Fatura — Maio/2026",
+        "descricao": "Parcelamento da implantação do mvGrafix.",
+        "valor": 600,
+        "vencimento": "2026-05-25"
+      },
+      "proximas": [
+        {
+          "id": "2026-06-fatura",
+          "referencia": "Fatura — Junho/2026",
+          "descricao": "Parcelamento da implantação do mvGrafix.",
+          "valor": 600,
+          "vencimento": "2026-06-25"
+        },
+        {
+          "id": "2026-07-fatura",
+          "referencia": "Fatura — Julho/2026",
+          "descricao": "Parcelamento da implantação do mvGrafix.",
+          "valor": 600,
+          "vencimento": "2026-07-25"
+        },
+        {
+          "id": "2026-06",
+          "referencia": "Mensalidade — Junho/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-06-25"
+        },
+        {
+          "id": "2026-07",
+          "referencia": "Mensalidade — Julho/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-07-25"
+        },
+        {
+          "id": "2026-08",
+          "referencia": "Mensalidade — Agosto/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-08-25"
+        },
+        {
+          "id": "2026-09",
+          "referencia": "Mensalidade — Setembro/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-09-25"
+        },
+        {
+          "id": "2026-10",
+          "referencia": "Mensalidade — Outrubro/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-10-25"
+        },
+        {
+          "id": "2026-11",
+          "referencia": "Mensalidade — Novembro/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-11-25"
+        },
+        {
+          "id": "2026-12",
+          "referencia": "Mensalidade — Dezembro/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-12-25"
         }
       ],
       "historico": []
