@@ -7,15 +7,14 @@ import {
   renderLogoHtml,
   resolveLogoSrc,
 } from "./brand";
-import {
-  diasAteVencimento,
-  formatarData,
-  formatarMoeda,
-} from "./format";
+import { isAdminRoute, mountAdmin } from "./admin";
+import { formatarData, formatarMoeda } from "./format";
+import { badgeVencimento } from "./status";
 import { baixarBoletoPdf, carregarLogoComoDataUrl } from "./boleto";
 import { gerarPix } from "./pix";
 import { publicUrl } from "./public-url";
 import type {
+  AppConfig,
   CobrancasData,
   Contrato,
   Mensalidade,
@@ -27,6 +26,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 let cobrancasData: CobrancasData | null = null;
 let pixConfig: PixConfig | null = null;
+let adminSenha: string | undefined;
 let logoSrc: string | null = null;
 let logoHeroSrc: string | null = null;
 
@@ -46,21 +46,9 @@ async function carregarDados(): Promise<void> {
   }
 
   cobrancasData = (await cobrancasRes.json()) as CobrancasData;
-  pixConfig = (await configRes.json()).pix as PixConfig;
-}
-
-function badgeVencimento(iso: string): { label: string; className: string } {
-  const dias = diasAteVencimento(iso);
-  if (dias < 0) {
-    return { label: "Vencida", className: "text-bg-danger" };
-  }
-  if (dias === 0) {
-    return { label: "Vence hoje", className: "text-bg-warning" };
-  }
-  if (dias <= 5) {
-    return { label: `${dias} dia(s)`, className: "text-bg-warning" };
-  }
-  return { label: "Em dia", className: "text-bg-success" };
+  const config = (await configRes.json()) as AppConfig;
+  pixConfig = config.pix;
+  adminSenha = config.admin?.senha;
 }
 
 function buscarContrato(numero: string): Contrato | undefined {
@@ -161,6 +149,9 @@ function renderLogin(): void {
       </main>
       <footer class="app-footer text-center py-3 small text-muted">
         © ${new Date().getFullYear()} - ${escapeHtml(FOOTER_LEGAL)}
+        <span class="d-block mt-1">
+          <a href="#/admin" class="link-secondary link-underline-opacity-0 link-underline-opacity-100-hover">Área administrativa</a>
+        </span>
       </footer>
     </div>
   `;
@@ -457,6 +448,31 @@ function renderErroCarregamento(): void {
   `;
 }
 
+function iniciarAdmin(): void {
+  mountAdmin({
+    app,
+    logoSrc,
+    getData: () => cobrancasData,
+    setData: (data) => {
+      cobrancasData = data;
+    },
+    reload: carregarDados,
+    senha: adminSenha,
+    onExit: () => {
+      renderLogin();
+      window.addEventListener("hashchange", onHashChange);
+    },
+  });
+}
+
+function onHashChange(): void {
+  if (isAdminRoute()) {
+    iniciarAdmin();
+  } else if (cobrancasData) {
+    renderLogin();
+  }
+}
+
 async function init(): Promise<void> {
   renderLoading();
   refreshLogoAssets();
@@ -467,7 +483,14 @@ async function init(): Promise<void> {
       resolveLogoSrc(true),
     ]);
     await carregarDados();
-    renderLogin();
+
+    window.addEventListener("hashchange", onHashChange);
+
+    if (isAdminRoute()) {
+      iniciarAdmin();
+    } else {
+      renderLogin();
+    }
   } catch {
     if (!logoSrc) logoSrc = await resolveLogoSrc(false).catch(() => null);
     if (!logoHeroSrc) logoHeroSrc = await resolveLogoSrc(true).catch(() => null);

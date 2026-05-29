@@ -373,3 +373,94 @@ img.brand-logo {
     padding-top: 0.5rem;
   }
 }
+
+/* —— Painel administrativo —— */
+.page-admin .admin-topbar {
+  background: rgba(15, 17, 25, 0.85);
+  backdrop-filter: blur(8px);
+  border-color: var(--mv-border) !important;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+.admin-kpi {
+  border-color: var(--mv-border);
+  background: var(--mv-surface-elevated);
+}
+
+.admin-kpi--ok {
+  box-shadow: inset 3px 0 0 #22c55e;
+}
+
+.admin-kpi--warn {
+  box-shadow: inset 3px 0 0 #eab308;
+}
+
+.admin-kpi--danger {
+  box-shadow: inset 3px 0 0 #ef4444;
+}
+
+.admin-kpi--wide .admin-kpi__value {
+  font-size: 1.35rem;
+}
+
+.admin-panel-card .card-header {
+  background: rgba(15, 17, 25, 0.6) !important;
+  border-bottom-color: var(--mv-border) !important;
+}
+
+.admin-nav-tabs .nav-link {
+  color: var(--bs-secondary-color);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.875rem;
+}
+
+.admin-nav-tabs .nav-link.active {
+  background: var(--mv-gradient);
+  color: #fff;
+}
+
+.admin-search-wrap {
+  min-width: min(100%, 220px);
+}
+
+.admin-table-wrap {
+  max-height: min(70vh, 560px);
+  overflow: auto;
+}
+
+.admin-table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--bs-body-color);
+  --bs-table-hover-bg: rgba(61, 90, 254, 0.08);
+  font-size: 0.9rem;
+}
+
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--mv-surface-elevated);
+  border-bottom-color: var(--mv-border);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
+.admin-table td,
+.admin-table th {
+  border-color: rgba(148, 163, 184, 0.1);
+}
+
+.page-admin-login .btn-link {
+  --bs-link-color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+
+.page-admin-login .btn-link:hover {
+  color: var(--mv-cyan);
+}

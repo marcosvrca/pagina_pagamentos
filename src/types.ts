@@ -29,3 +29,12 @@ export interface Contrato {
 export interface CobrancasData {
   contratos: Contrato[];
 }
+
+export interface AdminConfig {
+  senha: string;
+}
+
+export interface AppConfig {
+  pix: PixConfig;
+  admin?: AdminConfig;
+}
