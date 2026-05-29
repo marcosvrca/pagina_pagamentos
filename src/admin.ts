@@ -21,6 +21,7 @@ import {
   statusCobranca,
   type StatusCobranca,
 } from "./status";
+import { linkWhatsAppCobranca } from "./whatsapp";
 import type { CobrancasData, Contrato, Mensalidade, MensalidadePaga } from "./types";
 
 const AUTH_KEY = "mvflow-admin-auth";
@@ -225,22 +226,124 @@ function renderLogin(
     });
 }
 
-function renderKpi(
-  label: string,
-  valor: string,
-  extraClass = "",
-  hint = ""
-): string {
+type KpiVariant = "default" | "ok" | "warn" | "danger" | "info" | "money";
+
+const KPI_ICON = {
+  clientes: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  ok: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`,
+  warn: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+  danger: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+  money: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>`,
+  received: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+} as const;
+
+function renderKpiCard(opts: {
+  label: string;
+  valor: string;
+  hint?: string;
+  variant?: KpiVariant;
+  icon?: keyof typeof KPI_ICON;
+  colClass?: string;
+}): string {
+  const {
+    label,
+    valor,
+    hint = "",
+    variant = "default",
+    icon = "clientes",
+    colClass = "col-6 col-md-4 col-xl-2",
+  } = opts;
+
   return `
-    <div class="col-6 col-md-4 col-xl-2">
-      <div class="admin-kpi card h-100 ${extraClass}">
-        <div class="card-body py-3 px-3">
-          <p class="admin-kpi__label text-muted small text-uppercase mb-1">${escapeHtml(label)}</p>
-          <p class="admin-kpi__value h5 mb-0 fw-bold">${valor}</p>
-          ${hint ? `<p class="admin-kpi__hint small text-muted mb-0 mt-1">${escapeHtml(hint)}</p>` : ""}
+    <div class="${colClass}">
+      <article class="admin-kpi admin-kpi--${variant} card h-100">
+        <div class="card-body d-flex flex-column p-3 p-md-4">
+          <div class="admin-kpi__icon" aria-hidden="true">${KPI_ICON[icon]}</div>
+          <p class="admin-kpi__label mb-2">${escapeHtml(label)}</p>
+          <p class="admin-kpi__value mb-0">${valor}</p>
+          ${hint ? `<p class="admin-kpi__hint mb-0 mt-2">${escapeHtml(hint)}</p>` : ""}
+        </div>
+      </article>
+    </div>
+  `;
+}
+
+function renderSecaoKpis(resumo: ReturnType<typeof calcularResumo>): string {
+  const mesRef = mesAtualIso().replace("-", "/");
+
+  return `
+    <section class="admin-stats mb-4" aria-label="Resumo de cobranças">
+      <div class="admin-stats-block">
+        <header class="admin-stats-block__header">
+          <h2 class="admin-stats-block__title">Situação dos clientes</h2>
+          <p class="admin-stats-block__subtitle">Cobrança atual por contrato</p>
+        </header>
+        <div class="row g-3">
+          ${renderKpiCard({
+            label: "Clientes",
+            valor: String(resumo.totalClientes),
+            variant: "info",
+            icon: "clientes",
+          })}
+          ${renderKpiCard({
+            label: "Em dia",
+            valor: String(resumo.emDia),
+            variant: "ok",
+            icon: "ok",
+          })}
+          ${renderKpiCard({
+            label: "Vence em breve",
+            valor: String(resumo.proximo),
+            variant: "warn",
+            icon: "warn",
+          })}
+          ${renderKpiCard({
+            label: "Vence hoje",
+            valor: String(resumo.venceHoje),
+            variant: "warn",
+            icon: "warn",
+          })}
+          ${renderKpiCard({
+            label: "Vencidos",
+            valor: String(resumo.vencido),
+            variant: "danger",
+            icon: "danger",
+          })}
+          ${renderKpiCard({
+            label: "Em aberto",
+            valor: formatarMoeda(resumo.totalAberto),
+            hint: "soma das cobranças atuais",
+            variant: "money",
+            icon: "money",
+          })}
         </div>
       </div>
-    </div>
+
+      <div class="admin-stats-block admin-stats-block--finance mt-4">
+        <header class="admin-stats-block__header">
+          <h2 class="admin-stats-block__title">Recebimentos</h2>
+          <p class="admin-stats-block__subtitle">Histórico consolidado</p>
+        </header>
+        <div class="row g-3">
+          ${renderKpiCard({
+            label: "Total recebido",
+            valor: formatarMoeda(resumo.totalRecebido),
+            hint: "todos os pagamentos registrados",
+            variant: "money",
+            icon: "received",
+            colClass: "col-12 col-md-6",
+          })}
+          ${renderKpiCard({
+            label: "Recebido no mês",
+            valor: formatarMoeda(resumo.recebidoMes),
+            hint: `referência ${mesRef}`,
+            variant: "money",
+            icon: "received",
+            colClass: "col-12 col-md-6",
+          })}
+        </div>
+      </div>
+    </section>
   `;
 }
 
@@ -277,6 +380,22 @@ function renderTabelaClientes(
             ? "Vence hoje"
             : `Em ${dias} dia(s)`;
 
+      const linkCobrar = linkWhatsAppCobranca(c);
+      const btnCobrar = linkCobrar
+        ? `<a
+              href="${escapeHtml(linkCobrar)}"
+              class="btn btn-whatsapp btn-sm"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Enviar aviso de cobrança pelo WhatsApp"
+            >Cobrar</a>`
+        : `<button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              disabled
+              title="WhatsApp não cadastrado no contrato"
+            >Cobrar</button>`;
+
       return `
         <tr>
           <td class="font-monospace">${escapeHtml(c.numero)}</td>
@@ -296,6 +415,7 @@ function renderTabelaClientes(
           <td><span class="badge ${badge.className}">${badge.label}</span></td>
           <td class="text-nowrap">
             <div class="d-flex flex-wrap gap-1">
+              ${btnCobrar}
               <button
                 type="button"
                 class="btn btn-success btn-sm admin-btn-pagar"
@@ -578,28 +698,7 @@ function renderDashboard(options: AdminOptions): void {
                 </div>`
               : ""
           }
-          <section class="row g-3 mb-4">
-            ${renderKpi("Clientes", String(resumo.totalClientes))}
-            ${renderKpi("Em dia", String(resumo.emDia), "admin-kpi--ok")}
-            ${renderKpi("Vence em breve", String(resumo.proximo), "admin-kpi--warn")}
-            ${renderKpi("Vence hoje", String(resumo.venceHoje), "admin-kpi--warn")}
-            ${renderKpi("Vencidos", String(resumo.vencido), "admin-kpi--danger")}
-            ${renderKpi("Em aberto", formatarMoeda(resumo.totalAberto), "", "cobranças atuais")}
-          </section>
-
-          <section class="row g-3 mb-4">
-            <div class="col-md-6">
-              ${renderKpi("Total recebido", formatarMoeda(resumo.totalRecebido), "admin-kpi--wide")}
-            </div>
-            <div class="col-md-6">
-              ${renderKpi(
-                "Recebido no mês",
-                formatarMoeda(resumo.recebidoMes),
-                "admin-kpi--wide",
-                mesAtualIso()
-              )}
-            </div>
-          </section>
+          ${renderSecaoKpis(resumo)}
 
           <section class="card shadow-sm admin-panel-card">
             <div class="card-header d-flex flex-wrap align-items-center gap-2 justify-content-between">

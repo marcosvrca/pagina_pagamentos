@@ -384,25 +384,176 @@ img.brand-logo {
   z-index: 1020;
 }
 
+.admin-stats-block {
+  padding: 1.25rem 1.25rem 0.25rem;
+  border-radius: 1rem;
+  border: 1px solid var(--mv-border);
+  background: linear-gradient(
+    165deg,
+    rgba(22, 27, 46, 0.95) 0%,
+    rgba(15, 17, 25, 0.6) 100%
+  );
+}
+
+.admin-stats-block--finance {
+  background: linear-gradient(
+    165deg,
+    rgba(61, 90, 254, 0.1) 0%,
+    rgba(15, 17, 25, 0.75) 55%,
+    rgba(147, 51, 234, 0.08) 100%
+  );
+}
+
+.admin-stats-block__header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.admin-stats-block__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+  color: #f1f5f9;
+}
+
+.admin-stats-block__subtitle {
+  font-size: 0.8rem;
+  color: var(--bs-secondary-color);
+  margin: 0.2rem 0 0;
+}
+
 .admin-kpi {
-  border-color: var(--mv-border);
-  background: var(--mv-surface-elevated);
+  --kpi-accent: var(--mv-cyan);
+  --kpi-icon-bg: rgba(0, 174, 239, 0.12);
+  --kpi-icon-color: var(--mv-cyan);
+
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(148, 163, 184, 0.14) !important;
+  background: rgba(15, 17, 25, 0.55) !important;
+  border-radius: 0.9rem;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.admin-kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--kpi-accent);
+  border-radius: 3px 0 0 3px;
+}
+
+.admin-kpi::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 55%;
+  height: 80%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--kpi-icon-bg) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.admin-kpi:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 174, 239, 0.35) !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 174, 239, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.admin-kpi__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.65rem;
+  color: var(--kpi-icon-color);
+  background: var(--kpi-icon-bg);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-kpi__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  position: relative;
+  z-index: 1;
+}
+
+.admin-kpi__value {
+  font-size: clamp(1.35rem, 3.5vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: #f8fafc;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-kpi__hint {
+  font-size: 0.75rem;
+  color: var(--bs-tertiary-color);
+  position: relative;
+  z-index: 1;
+}
+
+.admin-kpi--info {
+  --kpi-accent: #60a5fa;
+  --kpi-icon-bg: rgba(96, 165, 250, 0.15);
+  --kpi-icon-color: #93c5fd;
 }
 
 .admin-kpi--ok {
-  box-shadow: inset 3px 0 0 #22c55e;
+  --kpi-accent: #22c55e;
+  --kpi-icon-bg: rgba(34, 197, 94, 0.14);
+  --kpi-icon-color: #4ade80;
 }
 
 .admin-kpi--warn {
-  box-shadow: inset 3px 0 0 #eab308;
+  --kpi-accent: #eab308;
+  --kpi-icon-bg: rgba(234, 179, 8, 0.14);
+  --kpi-icon-color: #facc15;
 }
 
 .admin-kpi--danger {
-  box-shadow: inset 3px 0 0 #ef4444;
+  --kpi-accent: #ef4444;
+  --kpi-icon-bg: rgba(239, 68, 68, 0.14);
+  --kpi-icon-color: #f87171;
 }
 
-.admin-kpi--wide .admin-kpi__value {
-  font-size: 1.35rem;
+.admin-kpi--money .admin-kpi__value {
+  background: var(--mv-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.admin-stats-block--finance .admin-kpi__value {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+@media (min-width: 1200px) {
+  .admin-stats-block .row > [class*="col-xl-2"] {
+    flex: 0 0 auto;
+    width: 16.66666667%;
+  }
 }
 
 .admin-panel-card .card-header {
@@ -463,4 +614,9 @@ img.brand-logo {
 
 .page-admin-login .btn-link:hover {
   color: var(--mv-cyan);
+}
+
+.page-admin .btn-whatsapp.btn-sm {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.55rem;
 }

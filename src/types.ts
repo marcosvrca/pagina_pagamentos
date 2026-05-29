@@ -21,6 +21,8 @@ export interface MensalidadePaga extends Mensalidade {
 export interface Contrato {
   numero: string;
   nome: string;
+  /** WhatsApp do cliente (ex.: +5563991234567) */
+  whatsapp?: string;
   atual: Mensalidade;
   proximas: Mensalidade[];
   historico: MensalidadePaga[];
