@@ -72,9 +72,10 @@
       "atual": {
         "id": "2026-06",
         "referencia": "Fatura — Junho/2026",
-        "descricao": "Parcelamento da implantação do mvGrafix.",
+        "descricao": "Parcelamento da implantação do mvGrafix — 2ª parcela.",
         "valor": 500,
-        "vencimento": "2026-06-04"
+        "vencimento": "2026-06-04",
+        "boletoPdf": "boletos/0450/implantacao-2026-06-02.pdf"
       },
       "proximas": [
         {
@@ -89,7 +90,8 @@
           "referencia": "Mensalidade — Junho/2026",
           "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
           "valor": 150,
-          "vencimento": "2026-06-04"
+          "vencimento": "2026-06-04",
+          "boletoPdf": "boletos/0450/mensalidade-2026-06.pdf"
         },
         {
           "id": "2026-07",

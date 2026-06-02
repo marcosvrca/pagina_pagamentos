@@ -12,6 +12,8 @@ export interface Mensalidade {
   descricao?: string;
   /** Identificador do mês no PIX (ex.: "2026-05") */
   id?: string;
+  /** Caminho relativo em `public/` do boleto bancário (PDF), ex.: boletos/0450/mensalidade-2026-06.pdf */
+  boletoPdf?: string;
 }
 
 export interface MensalidadePaga extends Mensalidade {

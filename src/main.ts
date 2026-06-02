@@ -67,6 +67,32 @@ function renderDescricaoHtml(m: Mensalidade): string {
   return `<p class="small text-muted mb-0 mt-1">${escapeHtml(m.descricao)}</p>`;
 }
 
+function urlBoletoPdf(m: Mensalidade): string | null {
+  return m.boletoPdf ? publicUrl(m.boletoPdf) : null;
+}
+
+function renderBotaoBoletoHtml(m: Mensalidade, className: string): string {
+  const href = urlBoletoPdf(m);
+  if (href) {
+    return `
+      <a
+        href="${href}"
+        class="${className}"
+        download
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Baixar boleto (PDF)
+      </a>
+    `;
+  }
+  return `
+    <button type="button" class="${className}" id="btn-boleto">
+      Baixar boleto (PDF)
+    </button>
+  `;
+}
+
 function renderHeader(
   logoClass = "brand-logo",
   src: string | null = logoHeroSrc ?? logoSrc
@@ -79,6 +105,11 @@ function renderHeader(
 }
 
 function renderItemProxima(m: Mensalidade): string {
+  const boletoHref = urlBoletoPdf(m);
+  const boletoBtn = boletoHref
+    ? `<a href="${boletoHref}" class="btn btn-sm btn-outline-primary mt-2" download target="_blank" rel="noopener noreferrer">Baixar boleto (PDF)</a>`
+    : "";
+
   return `
     <li class="list-group-item schedule-item schedule-item--future">
       <div class="d-flex justify-content-between align-items-start gap-2">
@@ -90,8 +121,9 @@ function renderItemProxima(m: Mensalidade): string {
       </div>
       <div class="d-flex justify-content-between align-items-center mt-1 small text-muted">
         <span>Vence em ${formatarData(m.vencimento)}</span>
-        <span class="badge text-bg-secondary">Previsto</span>
+        <span class="badge ${boletoHref ? "text-bg-warning" : "text-bg-secondary"}">${boletoHref ? "Em aberto" : "Previsto"}</span>
       </div>
+      ${boletoBtn}
     </li>
   `;
 }
@@ -293,9 +325,7 @@ function renderCobranca(
                 <button type="button" class="btn btn-primary w-100" id="btn-copiar">
                   Copiar código PIX
                 </button>
-                <button type="button" class="btn btn-outline-primary w-100 mt-2" id="btn-boleto">
-                  Baixar boleto (PDF)
-                </button>
+                ${renderBotaoBoletoHtml(atual, "btn btn-outline-primary w-100 mt-2")}
                 <a
                   href="${linkWhatsApp}"
                   class="btn btn-whatsapp w-100 mt-2"
@@ -375,15 +405,14 @@ function renderCobranca(
     }
   );
 
-  document.querySelector<HTMLButtonElement>("#btn-boleto")!.addEventListener(
-    "click",
-    async () => {
-      const btn = document.querySelector<HTMLButtonElement>("#btn-boleto")!;
+  const btnBoleto = document.querySelector<HTMLButtonElement>("#btn-boleto");
+  if (btnBoleto) {
+    btnBoleto.addEventListener("click", async () => {
       if (!pixConfig) return;
 
       const labelOriginal = "Baixar boleto (PDF)";
-      btn.disabled = true;
-      btn.innerHTML =
+      btnBoleto.disabled = true;
+      btnBoleto.innerHTML =
         '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Gerando PDF…';
 
       try {
@@ -396,24 +425,24 @@ function renderCobranca(
           qrDataUrl,
           logoDataUrl,
         });
-        btn.textContent = "Boleto baixado!";
-        btn.classList.add("btn-success");
+        btnBoleto.textContent = "Boleto baixado!";
+        btnBoleto.classList.add("btn-success");
         setTimeout(() => {
-          btn.disabled = false;
-          btn.textContent = labelOriginal;
-          btn.classList.remove("btn-success");
+          btnBoleto.disabled = false;
+          btnBoleto.textContent = labelOriginal;
+          btnBoleto.classList.remove("btn-success");
         }, 2000);
       } catch {
-        btn.disabled = false;
-        btn.textContent = "Erro ao gerar PDF";
-        btn.classList.add("btn-danger");
+        btnBoleto.disabled = false;
+        btnBoleto.textContent = "Erro ao gerar PDF";
+        btnBoleto.classList.add("btn-danger");
         setTimeout(() => {
-          btn.textContent = labelOriginal;
-          btn.classList.remove("btn-danger");
+          btnBoleto.textContent = labelOriginal;
+          btnBoleto.classList.remove("btn-danger");
         }, 2500);
       }
-    }
-  );
+    });
+  }
 
   document
     .querySelector<HTMLButtonElement>("#btn-voltar")!
