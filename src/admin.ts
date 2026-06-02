@@ -21,7 +21,7 @@ import {
   statusCobranca,
   type StatusCobranca,
 } from "./status";
-import { linkWhatsAppCobranca } from "./whatsapp";
+import { linkWhatsAppBoletoAtual, linkWhatsAppCobranca } from "./whatsapp";
 import type { CobrancasData, Contrato, Mensalidade, MensalidadePaga } from "./types";
 
 const AUTH_KEY = "mvflow-admin-auth";
@@ -381,6 +381,7 @@ function renderTabelaClientes(
             : `Em ${dias} dia(s)`;
 
       const linkCobrar = linkWhatsAppCobranca(c);
+      const linkEnviarBoleto = linkWhatsAppBoletoAtual(c);
       const btnCobrar = linkCobrar
         ? `<a
               href="${escapeHtml(linkCobrar)}"
@@ -395,6 +396,20 @@ function renderTabelaClientes(
               disabled
               title="WhatsApp não cadastrado no contrato"
             >Cobrar</button>`;
+      const btnEnviarBoleto = linkEnviarBoleto
+        ? `<a
+              href="${escapeHtml(linkEnviarBoleto)}"
+              class="btn btn-outline-success btn-sm"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Enviar boleto da cobrança atual pelo WhatsApp"
+            >Enviar boleto</a>`
+        : `<button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              disabled
+              title="Cobrança atual sem boleto PDF cadastrado"
+            >Enviar boleto</button>`;
 
       return `
         <tr>
@@ -416,6 +431,7 @@ function renderTabelaClientes(
           <td class="text-nowrap">
             <div class="d-flex flex-wrap gap-1">
               ${btnCobrar}
+              ${btnEnviarBoleto}
               <button
                 type="button"
                 class="btn btn-success btn-sm admin-btn-pagar"

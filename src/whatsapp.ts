@@ -59,3 +59,39 @@ export function linkWhatsAppCobranca(
   const texto = mensagemCobranca(contrato, portalUrl);
   return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
 }
+
+export function mensagemEnvioBoleto(
+  contrato: Contrato,
+  boletoUrl: string
+): string {
+  const { atual } = contrato;
+  const primeiroNome = contrato.nome.trim().split(/\s+/)[0] ?? contrato.nome;
+
+  return [
+    `Olá, ${primeiroNome}!`,
+    "",
+    "Segue o boleto para pagamento:",
+    "",
+    `Contrato: ${contrato.numero}`,
+    `Referência: ${atual.referencia}`,
+    ...(atual.descricao ? [`Descrição: ${atual.descricao}`] : []),
+    `Valor: ${formatarMoeda(atual.valor)}`,
+    `Vencimento: ${formatarData(atual.vencimento)}`,
+    "",
+    `Boleto (PDF): ${boletoUrl}`,
+    "",
+    "Qualquer dúvida, estamos à disposição.",
+    "mvFlow Sistemas e Gestão",
+  ].join("\n");
+}
+
+export function linkWhatsAppBoletoAtual(contrato: Contrato): string | null {
+  if (!contrato.whatsapp || !contrato.atual.boletoPdf) return null;
+  const numero = normalizarWhatsApp(contrato.whatsapp);
+  if (!numero) return null;
+
+  const boletoPath = publicUrl(contrato.atual.boletoPdf);
+  const boletoUrl = new URL(boletoPath, window.location.href).href;
+  const texto = mensagemEnvioBoleto(contrato, boletoUrl);
+  return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+}
