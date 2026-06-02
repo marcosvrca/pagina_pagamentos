@@ -5,6 +5,7 @@ import {
   exportarRelatorioPdf,
 } from "./admin-export";
 import { FOOTER_LEGAL, renderLogoHtml } from "./brand";
+import { listarCobrancasAbertas } from "./cobrancas-abertas";
 import {
   baixarCobrancasJson,
   buscarContratoPorNumero,
@@ -21,7 +22,7 @@ import {
   statusCobranca,
   type StatusCobranca,
 } from "./status";
-import { linkWhatsAppBoletoAtual, linkWhatsAppCobranca } from "./whatsapp";
+import { linkWhatsAppBoleto, linkWhatsAppCobranca } from "./whatsapp";
 import type { CobrancasData, Contrato, Mensalidade, MensalidadePaga } from "./types";
 
 const AUTH_KEY = "mvflow-admin-auth";
@@ -353,26 +354,30 @@ function renderTabelaClientes(
   busca: string
 ): string {
   const termo = busca.trim().toLowerCase();
-  const filtrados = contratos.filter((c) => {
+
+  const linhas = contratos.flatMap((c) => listarCobrancasAbertas(c));
+
+  const filtradas = linhas.filter(({ contrato, cobranca }) => {
     const matchBusca =
       !termo ||
-      c.numero.toLowerCase().includes(termo) ||
-      c.nome.toLowerCase().includes(termo) ||
-      c.atual.referencia.toLowerCase().includes(termo);
+      contrato.numero.toLowerCase().includes(termo) ||
+      contrato.nome.toLowerCase().includes(termo) ||
+      cobranca.referencia.toLowerCase().includes(termo) ||
+      (cobranca.descricao?.toLowerCase().includes(termo) ?? false);
 
-    const st = statusCobranca(c.atual.vencimento);
+    const st = statusCobranca(cobranca.vencimento);
     const matchStatus = filtroStatus === "todos" || st === filtroStatus;
     return matchBusca && matchStatus;
   });
 
-  if (filtrados.length === 0) {
+  if (filtradas.length === 0) {
     return `<p class="text-muted small mb-0 fst-italic">Nenhum cliente encontrado com os filtros atuais.</p>`;
   }
 
-  const rows = filtrados
-    .map((c) => {
-      const badge = badgeVencimento(c.atual.vencimento);
-      const dias = diasAteVencimento(c.atual.vencimento);
+  const rows = filtradas
+    .map(({ contrato, cobranca, ehAtual }) => {
+      const badge = badgeVencimento(cobranca.vencimento);
+      const dias = diasAteVencimento(cobranca.vencimento);
       const diasLabel =
         dias < 0
           ? `${Math.abs(dias)} dia(s) em atraso`
@@ -380,15 +385,15 @@ function renderTabelaClientes(
             ? "Vence hoje"
             : `Em ${dias} dia(s)`;
 
-      const linkCobrar = linkWhatsAppCobranca(c);
-      const linkEnviarBoleto = linkWhatsAppBoletoAtual(c);
+      const linkCobrar = linkWhatsAppCobranca(contrato, cobranca);
+      const linkEnviarBoleto = linkWhatsAppBoleto(contrato, cobranca);
       const btnCobrar = linkCobrar
         ? `<a
               href="${escapeHtml(linkCobrar)}"
               class="btn btn-whatsapp btn-sm"
               target="_blank"
               rel="noopener noreferrer"
-              title="Enviar aviso de cobrança pelo WhatsApp"
+              title="Enviar aviso desta cobrança pelo WhatsApp"
             >Cobrar</a>`
         : `<button
               type="button"
@@ -402,29 +407,52 @@ function renderTabelaClientes(
               class="btn btn-outline-success btn-sm"
               target="_blank"
               rel="noopener noreferrer"
-              title="Enviar boleto da cobrança atual pelo WhatsApp"
+              title="Enviar boleto desta cobrança pelo WhatsApp"
             >Enviar boleto</a>`
         : `<button
               type="button"
               class="btn btn-outline-secondary btn-sm"
               disabled
-              title="Cobrança atual sem boleto PDF cadastrado"
+              title="Esta cobrança não tem boleto PDF cadastrado"
             >Enviar boleto</button>`;
+
+      const tipoBadge = ehAtual
+        ? '<span class="badge text-bg-primary">Principal</span>'
+        : '<span class="badge text-bg-warning">Paralela</span>';
+
+      const btnPago = ehAtual
+        ? `<button
+              type="button"
+              class="btn btn-success btn-sm admin-btn-pagar"
+              data-contrato="${escapeHtml(contrato.numero)}"
+              title="Registrar pagamento da cobrança principal"
+            >Pago</button>`
+        : "";
+
+      const btnCopiar = `<button
+              type="button"
+              class="btn btn-outline-secondary btn-sm admin-btn-copiar"
+              data-contrato="${escapeHtml(contrato.numero)}"
+              title="Copiar número do contrato"
+            >Copiar</button>`;
 
       return `
         <tr>
-          <td class="font-monospace">${escapeHtml(c.numero)}</td>
+          <td class="font-monospace">${escapeHtml(contrato.numero)}</td>
           <td>
-            <span class="fw-semibold">${escapeHtml(c.nome)}</span>
-            <span class="d-block small text-muted">${c.historico.length} pagamento(s) no histórico</span>
+            <span class="fw-semibold">${escapeHtml(contrato.nome)}</span>
+            <span class="d-block small text-muted">${contrato.historico.length} pagamento(s) no histórico</span>
           </td>
           <td>
-            <span class="d-block">${escapeHtml(c.atual.referencia)}</span>
-            ${c.atual.descricao ? `<span class="small text-muted">${escapeHtml(c.atual.descricao)}</span>` : ""}
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+              <span class="fw-semibold">${escapeHtml(cobranca.referencia)}</span>
+              ${tipoBadge}
+            </div>
+            ${cobranca.descricao ? `<span class="small text-muted">${escapeHtml(cobranca.descricao)}</span>` : ""}
           </td>
-          <td class="text-nowrap fw-semibold">${formatarMoeda(c.atual.valor)}</td>
+          <td class="text-nowrap fw-semibold">${formatarMoeda(cobranca.valor)}</td>
           <td class="text-nowrap">
-            ${formatarData(c.atual.vencimento)}
+            ${formatarData(cobranca.vencimento)}
             <span class="d-block small text-muted">${diasLabel}</span>
           </td>
           <td><span class="badge ${badge.className}">${badge.label}</span></td>
@@ -432,18 +460,8 @@ function renderTabelaClientes(
             <div class="d-flex flex-wrap gap-1">
               ${btnCobrar}
               ${btnEnviarBoleto}
-              <button
-                type="button"
-                class="btn btn-success btn-sm admin-btn-pagar"
-                data-contrato="${escapeHtml(c.numero)}"
-                title="Registrar pagamento da cobrança atual"
-              >Pago</button>
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-sm admin-btn-copiar"
-                data-contrato="${escapeHtml(c.numero)}"
-                title="Copiar número do contrato"
-              >Copiar</button>
+              ${btnPago}
+              ${btnCopiar}
             </div>
           </td>
         </tr>
@@ -458,7 +476,7 @@ function renderTabelaClientes(
           <tr>
             <th>Contrato</th>
             <th>Cliente</th>
-            <th>Cobrança atual</th>
+            <th>Cobrança em aberto</th>
             <th>Valor</th>
             <th>Vencimento</th>
             <th>Status</th>
@@ -744,7 +762,8 @@ function renderDashboard(options: AdminOptions): void {
           </section>
 
           <p class="small text-muted mt-3 mb-0">
-            Use <strong>Pago</strong> na lista de clientes para registrar pagamento. A próxima cobrança em <code>proximas</code> passa a ser a atual.
+            Cada cobrança em aberto aparece em uma linha (ex.: fatura e mensalidade no mesmo vencimento).
+            Use <strong>Pago</strong> na cobrança <strong>Principal</strong> para registrar pagamento; a próxima em <code>proximas</code> passa a ser a atual.
             Baixe o JSON e publique em <code>public/cobrancas.json</code>.
           </p>
         </main>

@@ -1,6 +1,6 @@
 import { diasAteVencimento, formatarData, formatarMoeda } from "./format";
 import { publicUrl } from "./public-url";
-import type { Contrato } from "./types";
+import type { Contrato, Mensalidade } from "./types";
 
 export function normalizarWhatsApp(numero: string): string {
   return numero.replace(/\D/g, "");
@@ -14,9 +14,12 @@ export function urlPortalPagamento(): string {
   return "https://marcosvrca.github.io/pagina_pagamentos";
 }
 
-export function mensagemCobranca(contrato: Contrato, portalUrl: string): string {
-  const { atual } = contrato;
-  const dias = diasAteVencimento(atual.vencimento);
+export function mensagemCobranca(
+  contrato: Contrato,
+  cobranca: Mensalidade,
+  portalUrl: string
+): string {
+  const dias = diasAteVencimento(cobranca.vencimento);
   const primeiroNome = contrato.nome.trim().split(/\s+/)[0] ?? contrato.nome;
 
   let situacao = "está disponível para pagamento";
@@ -34,10 +37,10 @@ export function mensagemCobranca(contrato: Contrato, portalUrl: string): string 
     `Passando para lembrar que a cobrança abaixo ${situacao}:`,
     "",
     `Contrato: ${contrato.numero}`,
-    `Referência: ${atual.referencia}`,
-    ...(atual.descricao ? [`Descrição: ${atual.descricao}`] : []),
-    `Valor: ${formatarMoeda(atual.valor)}`,
-    `Vencimento: ${formatarData(atual.vencimento)}`,
+    `Referência: ${cobranca.referencia}`,
+    ...(cobranca.descricao ? [`Descrição: ${cobranca.descricao}`] : []),
+    `Valor: ${formatarMoeda(cobranca.valor)}`,
+    `Vencimento: ${formatarData(cobranca.vencimento)}`,
     "",
     "Acesse o portal para consultar e pagar via PIX:",
     portalUrl,
@@ -51,20 +54,21 @@ export function mensagemCobranca(contrato: Contrato, portalUrl: string): string 
 
 export function linkWhatsAppCobranca(
   contrato: Contrato,
+  cobranca: Mensalidade,
   portalUrl = urlPortalPagamento()
 ): string | null {
   if (!contrato.whatsapp) return null;
   const numero = normalizarWhatsApp(contrato.whatsapp);
   if (!numero) return null;
-  const texto = mensagemCobranca(contrato, portalUrl);
+  const texto = mensagemCobranca(contrato, cobranca, portalUrl);
   return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
 }
 
 export function mensagemEnvioBoleto(
   contrato: Contrato,
+  cobranca: Mensalidade,
   boletoUrl: string
 ): string {
-  const { atual } = contrato;
   const primeiroNome = contrato.nome.trim().split(/\s+/)[0] ?? contrato.nome;
 
   return [
@@ -73,10 +77,10 @@ export function mensagemEnvioBoleto(
     "Segue o boleto para pagamento:",
     "",
     `Contrato: ${contrato.numero}`,
-    `Referência: ${atual.referencia}`,
-    ...(atual.descricao ? [`Descrição: ${atual.descricao}`] : []),
-    `Valor: ${formatarMoeda(atual.valor)}`,
-    `Vencimento: ${formatarData(atual.vencimento)}`,
+    `Referência: ${cobranca.referencia}`,
+    ...(cobranca.descricao ? [`Descrição: ${cobranca.descricao}`] : []),
+    `Valor: ${formatarMoeda(cobranca.valor)}`,
+    `Vencimento: ${formatarData(cobranca.vencimento)}`,
     "",
     `Boleto (PDF): ${boletoUrl}`,
     "",
@@ -85,13 +89,16 @@ export function mensagemEnvioBoleto(
   ].join("\n");
 }
 
-export function linkWhatsAppBoletoAtual(contrato: Contrato): string | null {
-  if (!contrato.whatsapp || !contrato.atual.boletoPdf) return null;
+export function linkWhatsAppBoleto(
+  contrato: Contrato,
+  cobranca: Mensalidade
+): string | null {
+  if (!contrato.whatsapp || !cobranca.boletoPdf) return null;
   const numero = normalizarWhatsApp(contrato.whatsapp);
   if (!numero) return null;
 
-  const boletoPath = publicUrl(contrato.atual.boletoPdf);
+  const boletoPath = publicUrl(cobranca.boletoPdf);
   const boletoUrl = new URL(boletoPath, window.location.href).href;
-  const texto = mensagemEnvioBoleto(contrato, boletoUrl);
+  const texto = mensagemEnvioBoleto(contrato, cobranca, boletoUrl);
   return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
 }
