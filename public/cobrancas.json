@@ -143,20 +143,13 @@
       "nome": "Sublime Sports",
       "whatsapp": "+5563992807781",
       "atual": {
-        "id": "2026-06",
-        "referencia": "Mensalidade — Junho/2026",
+        "id": "2026-07",
+        "referencia": "Mensalidade — Julho/2026",
         "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
         "valor": 150,
-        "vencimento": "2026-06-04"
+        "vencimento": "2026-07-04"
       },
       "proximas": [
-        {
-          "id": "2026-07",
-          "referencia": "Mensalidade — Julho/2026",
-          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
-          "valor": 150,
-          "vencimento": "2026-07-04"
-        },
         {
           "id": "2026-08",
           "referencia": "Mensalidade — Agosto/2026",
@@ -193,7 +186,16 @@
           "vencimento": "2026-12-04"
         }
       ],
-      "historico": []
+      "historico": [
+        {
+          "id": "2026-06",
+          "referencia": "Mensalidade — Junho/2026",
+          "descricao": "Mensalidade mensal referente ao suporte do sistema mvGrafix.",
+          "valor": 150,
+          "vencimento": "2026-06-04",
+          "pagoEm": "2026-06-08"
+        }
+      ]
     },
     {
       "numero": "882997",

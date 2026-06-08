@@ -1,14 +1,10 @@
 /// <reference types="vite/client" />
 
-declare global {
-  interface Window {
-    bootstrap: {
-      Modal: {
-        getOrCreateInstance(element: Element): { show(): void; hide(): void };
-        getInstance(element: Element): { hide(): void } | null;
-      };
-    };
+declare module "bootstrap" {
+  export class Modal {
+    static getOrCreateInstance(element: Element): Modal;
+    static getInstance(element: Element): Modal | null;
+    show(): void;
+    hide(): void;
   }
 }
-
-export {};

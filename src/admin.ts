@@ -1,3 +1,4 @@
+import { Modal } from "bootstrap";
 import {
   exportarCsvAgenda,
   exportarCsvClientes,
@@ -838,8 +839,7 @@ function renderDashboard(options: AdminOptions): void {
             .classList.add("d-none");
 
           const modalEl = document.querySelector("#modal-pagamento")!;
-          const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-          modal.show();
+          Modal.getOrCreateInstance(modalEl).show();
         });
       });
     };
@@ -877,7 +877,7 @@ function renderDashboard(options: AdminOptions): void {
       alteracoesPendentes = true;
 
       const modalEl = document.querySelector("#modal-pagamento")!;
-      window.bootstrap.Modal.getInstance(modalEl)?.hide();
+      Modal.getInstance(modalEl)?.hide();
 
       paint();
     };
